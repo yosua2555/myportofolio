@@ -32,7 +32,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = 'django-insecure-yz-x6$pna#jllsg-=ak!7lpwz2bb1z9*6pnxjw$1+xs^akacye'
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = False
+DEBUG = not PRODUCTION
 
 
 # Application definition
@@ -142,6 +142,7 @@ STATIC_URL = 'static/'
 STATICFILES_DIRS = [BASE_DIR / 'static']
 STATIC_ROOT = BASE_DIR / 'staticfiles'
 WHITENOISE_USE_FINDERS = True
+WHITENOISE_AUTOREFRESH = not PRODUCTION
 
 
 # Email
