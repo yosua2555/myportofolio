@@ -15,10 +15,11 @@
         <div class="container">
             <!-- Tautan nama selalu kembali ke Profile -->
             <a href="{% url 'main:show_main' %}" class="brand">{{ name }}</a>
-            <!-- Navigasi sesuai instruksi Langkah 3 tutorial -->
+            <!-- Navigasi disesuaikan dengan fitur tambahan Education -->
             <nav>
                 <a href="{% url 'main:show_main' %}">Profile</a>
                 <a href="{% url 'main:show_experience' %}">Experience</a>
+                <a href="{% url 'main:show_education' %}">Education</a> <!-- TAUTAN BARU -->
             </nav>
         </div>
     </header>
