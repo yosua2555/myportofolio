@@ -154,3 +154,5 @@ MAILERS = {
         'BACKEND': 'django.core.mail.backends.console.EmailBackend',
     },
 }
+
+CSRF_TRUSTED_ORIGINS = ["https://yosua-peitho-myportofolio.pws.cs.ui.ac.id", "http://localhost:8000", "http://127.0.0.1:8000"]
