@@ -40,6 +40,12 @@
                         
                         <div class="project-card-actions">
                             <div class="project-actions">
+                                <!-- Tombol Edit Data -->
+                                <a href="{% url 'main:update_education' edu.id %}" class="button button-secondary">
+                                    Edit
+                                </a>
+                                
+                                <!-- Modal Hapus Data -->
                                 {% include "components/education_delete_modal.html" with edu=edu %}
                             </div>
                         </div>
