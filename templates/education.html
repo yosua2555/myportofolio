@@ -40,13 +40,57 @@
                         
                         <div class="project-card-actions">
                             <div class="project-actions">
-                                <!-- Tombol Edit Data -->
+                                <!-- Tombol Edit -->
                                 <a href="{% url 'main:update_education' edu.id %}" class="button button-secondary">
                                     Edit
                                 </a>
                                 
-                                <!-- Modal Hapus Data -->
-                                {% include "components/education_delete_modal.html" with edu=edu %}
+                                <!-- Tombol Pemicu Modal Hapus -->
+                                <p class="experience-status">
+                                    <button type="button"
+                                            class="button button-danger"
+                                            popovertarget="delete-edu-{{ edu.id }}"
+                                            aria-label="Hapus {{ edu.institution }}"
+                                            title="Hapus riwayat pendidikan">
+                                        Hapus Education
+                                    </button>
+                                </p>
+
+                                <!-- Popover/Modal Konfirmasi Hapus -->
+                                <div id="delete-edu-{{ edu.id }}"
+                                     class="project-delete-modal"
+                                     popover="auto"
+                                     role="dialog"
+                                     aria-modal="true"
+                                     aria-labelledby="delete-edu-title-{{ edu.id }}">
+                                    <button type="button"
+                                            class="project-delete-modal__backdrop"
+                                            popovertarget="delete-edu-{{ edu.id }}"
+                                            popovertargetaction="hide"
+                                            aria-label="Tutup konfirmasi hapus"></button>
+                                    <div class="project-delete-modal__content">
+                                        <button type="button"
+                                                class="project-delete-modal__close"
+                                                popovertarget="delete-edu-{{ edu.id }}"
+                                                popovertargetaction="hide"
+                                                aria-label="Tutup konfirmasi hapus">×</button>
+                                        <h2 id="delete-edu-title-{{ edu.id }}">Hapus Education?</h2>
+                                        <p>
+                                            Apakah Anda yakin ingin menghapus
+                                            <strong>{{ edu.institution }}</strong>?
+                                        </p>
+                                        <div class="project-delete-modal__actions">
+                                            <button type="button"
+                                                    class="button button-secondary"
+                                                    popovertarget="delete-edu-{{ edu.id }}"
+                                                    popovertargetaction="hide">Batal</button>
+                                            <form method="post" action="{% url 'main:delete_education' edu.id %}">
+                                                {% csrf_token %}
+                                                <button type="submit" class="button button-danger">Ya, Hapus</button>
+                                            </form>
+                                        </div>
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     </article>
