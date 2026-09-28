@@ -4,15 +4,19 @@ from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib import messages
 from django.contrib.auth import login, logout
 from django.contrib.auth.forms import AuthenticationForm, UserCreationForm
+from django.contrib.auth.decorators import login_required
+from django.core.exceptions import PermissionDenied
 from django.core import serializers
 from django.http import HttpResponse
-from main.models import Experience, Education
-from main.forms import EducationForm, ProjectForm  # DIBERSIHKAN: Impor dari main.forms
+
+# Import model & form yang dibutuhkan
+from main.models import Experience, Education, Project
+from main.forms import EducationForm, ProjectForm
 
 
 def show_main(request):
-    # Membaca cookie last_login (Langkah 3)
     last_login = request.COOKIES.get('last_login', 'Belum ada sesi login / Cookie tidak ditemukan')
+    projects = Project.objects.all()
 
     context = {
         "name": "Yosua Peitho Purba",
@@ -22,7 +26,8 @@ def show_main(request):
             "Information Student @ Universitas Indonesia | Software "
             "Development and Cyber Security Enthusiast"
         ),
-        "last_login": last_login,  # Ditambahkan ke context
+        "last_login": last_login,
+        "projects": projects,
     }
     return render(request, "index.html", context)
 
@@ -36,7 +41,6 @@ def show_experience(request):
 
 
 def show_education(request):
-    # Mengambil data dari JSON response lalu di-deserialize
     json_response = get_education_json(request)
     education_objects = serializers.deserialize(
         "json",
@@ -51,20 +55,6 @@ def show_education(request):
         "institution_query": institution_query,
     }
     return render(request, "education.html", context)
-
-
-def create_education(request):
-    form = EducationForm(request.POST or None)
-    if request.method == "POST" and form.is_valid():
-        form.save()
-        messages.success(request, "Riwayat pendidikan baru berhasil ditambahkan!")
-        return redirect("main:show_education")
-
-    context = {
-        "name": "Yosua Peitho Purba",
-        "form": form,
-    }
-    return render(request, "education_form.html", context)
 
 
 def get_education_json(request):
@@ -89,16 +79,29 @@ def get_education_xml(request):
     return HttpResponse(education_xml, content_type="application/xml")
 
 
-def delete_education(request, education_id):
-    education = get_object_or_404(Education, pk=education_id)
-    if request.method == "POST":
-        education.delete()
-        messages.success(request, "Riwayat pendidikan berhasil dihapus!")
+@login_required(login_url="/login/")
+def create_education(request):
+    if not request.user.is_superuser:
+        raise PermissionDenied
+
+    form = EducationForm(request.POST or None)
+    if request.method == "POST" and form.is_valid():
+        form.save()
+        messages.success(request, "Riwayat pendidikan baru berhasil ditambahkan!")
         return redirect("main:show_education")
-    return redirect("main:show_education")
+
+    context = {
+        "name": "Yosua Peitho Purba",
+        "form": form,
+    }
+    return render(request, "education_form.html", context)
 
 
+@login_required(login_url="/login/")
 def update_education(request, education_id):
+    if not request.user.is_superuser:
+        raise PermissionDenied
+
     education = get_object_or_404(Education, pk=education_id)
     form = EducationForm(request.POST or None, instance=education)
 
@@ -114,15 +117,43 @@ def update_education(request, education_id):
     return render(request, "education_form.html", context)
 
 
-def create_project(request):
-    form = ProjectForm(request.POST or None)
+@login_required(login_url="/login/")
+def delete_education(request, education_id):
+    if not request.user.is_superuser:
+        raise PermissionDenied
 
+    education = get_object_or_404(Education, pk=education_id)
+    if request.method == "POST":
+        education.delete()
+        messages.success(request, "Riwayat pendidikan berhasil dihapus!")
+        return redirect("main:show_education")
+    return redirect("main:show_education")
+
+
+@login_required(login_url="/login/")
+def create_project(request):
+    if not request.user.is_superuser:
+        raise PermissionDenied
+
+    form = ProjectForm(request.POST or None)
     if request.method == "POST" and form.is_valid():
         form.save()
-        return redirect("main:show_main")  # DIPERBAIKI: Typo 'show main' -> 'show_main'
+        return redirect("main:show_main")
 
     context = {"form": form}
     return render(request, "project_form.html", context)
+
+
+@login_required(login_url="/login/")
+def toggle_star(request, project_id):
+    project = get_object_or_404(Project, pk=project_id)
+    if request.method == "POST":
+        if request.user in project.starred_by.all():
+            project.starred_by.remove(request.user)
+        else:
+            project.starred_by.add(request.user)
+            
+    return redirect("main:show_main")
 
 
 def register(request):
@@ -145,7 +176,6 @@ def login_user(request):
         user = form.get_user()
         login(request, user)
         
-        # Menyimpan Cookie last_login (Langkah 2)
         response = redirect("main:show_main")
         response.set_cookie('last_login', datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S'))
         return response
@@ -159,8 +189,13 @@ def login_user(request):
 
 def logout_user(request):
     logout(request)
-    
-    # Menghapus Cookie last_login saat Logout (Langkah 4)
     response = redirect("main:show_main")
     response.delete_cookie('last_login')
     return response
+
+def get_projects_json(request):
+    projects = Project.objects.all()
+    projects_json = serializers.serialize(
+        "json", projects, use_natural_foreign_keys=True
+    )
+    return HttpResponse(projects_json, content_type="application/json")

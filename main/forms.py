@@ -1,5 +1,5 @@
 from django.forms import ModelForm, TextInput, Textarea, NumberInput
-from main.models import Education
+from main.models import Education, Project
 
 class EducationForm(ModelForm):
     class Meta:
@@ -45,6 +45,36 @@ class EducationForm(ModelForm):
             "ended_year": NumberInput(
                 attrs={
                     "placeholder": "2029 (Biarkan kosong jika masih berlangsung)",
+                }
+            ),
+        }
+
+# DITAMBAHKAN: Form untuk model Project
+class ProjectForm(ModelForm):
+    class Meta:
+        model = Project
+        fields = ["name", "date", "description"]
+        labels = {
+            "name": "Nama Proyek",
+            "date": "Tahun Dibuat",
+            "description": "Deskripsi Proyek",
+        }
+        widgets = {
+            "name": TextInput(
+                attrs={
+                    "placeholder": "Contoh: Website Portofolio Django",
+                    "maxlength": 255,
+                }
+            ),
+            "date": NumberInput(
+                attrs={
+                    "placeholder": "2026",
+                }
+            ),
+            "description": Textarea(
+                attrs={
+                    "placeholder": "Jelaskan teknologi dan fitur utama proyek...",
+                    "rows": 3,
                 }
             ),
         }

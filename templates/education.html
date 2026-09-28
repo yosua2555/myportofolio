@@ -11,13 +11,17 @@
             <p class="section-kicker">Riwayat Pendidikan</p>
             <div class="project-header">
                 <h1>Education</h1>
-                <a href="{% url 'main:create_education' %}" class="button project-add-button">
-                    <span aria-hidden="true">+</span>
-                    Tambah Education
-                </a>
+                
+                <!-- Hanya tampilkan tombol Tambah jika akun adalah Superuser -->
+                {% if user.is_superuser %}
+                    <a href="{% url 'main:create_education' %}" class="button project-add-button">
+                        <span aria-hidden="true">+</span>
+                        Tambah Education
+                    </a>
+                {% endif %}
             </div>
 
-            <!-- Form Search -->
+            <!-- Form Search (Bisa diakses siapapun) -->
             <form method="get" action="{% url 'main:show_education' %}" class="project-search">
                 <input type="search"
                        name="institution"
@@ -38,61 +42,64 @@
                         <p class="experience-description"><strong>{{ edu.degree }}</strong></p>
                         <p class="experience-description">{{ edu.description }}</p>
                         
-                        <div class="project-card-actions">
-                            <div class="project-actions">
-                                <!-- Tombol Edit -->
-                                <a href="{% url 'main:update_education' edu.id %}" class="button button-secondary">
-                                    Edit
-                                </a>
-                                
-                                <!-- Tombol Pemicu Modal Hapus -->
-                                <p class="experience-status">
-                                    <button type="button"
-                                            class="button button-danger"
-                                            popovertarget="delete-edu-{{ edu.id }}"
-                                            aria-label="Hapus {{ edu.institution }}"
-                                            title="Hapus riwayat pendidikan">
-                                        Hapus Education
-                                    </button>
-                                </p>
-
-                                <!-- Popover/Modal Konfirmasi Hapus -->
-                                <div id="delete-edu-{{ edu.id }}"
-                                     class="project-delete-modal"
-                                     popover="auto"
-                                     role="dialog"
-                                     aria-modal="true"
-                                     aria-labelledby="delete-edu-title-{{ edu.id }}">
-                                    <button type="button"
-                                            class="project-delete-modal__backdrop"
-                                            popovertarget="delete-edu-{{ edu.id }}"
-                                            popovertargetaction="hide"
-                                            aria-label="Tutup konfirmasi hapus"></button>
-                                    <div class="project-delete-modal__content">
+                        <!-- Hanya tampilkan kontrol Edit dan Hapus jika akun adalah Superuser -->
+                        {% if user.is_superuser %}
+                            <div class="project-card-actions">
+                                <div class="project-actions">
+                                    <!-- Tombol Edit -->
+                                    <a href="{% url 'main:update_education' edu.id %}" class="button button-secondary">
+                                        Edit
+                                    </a>
+                                    
+                                    <!-- Tombol Pemicu Modal Hapus -->
+                                    <p class="experience-status">
                                         <button type="button"
-                                                class="project-delete-modal__close"
+                                                class="button button-danger"
+                                                popovertarget="delete-edu-{{ edu.id }}"
+                                                aria-label="Hapus {{ edu.institution }}"
+                                                title="Hapus riwayat pendidikan">
+                                            Hapus Education
+                                        </button>
+                                    </p>
+
+                                    <!-- Popover/Modal Konfirmasi Hapus -->
+                                    <div id="delete-edu-{{ edu.id }}"
+                                         class="project-delete-modal"
+                                         popover="auto"
+                                         role="dialog"
+                                         aria-modal="true"
+                                         aria-labelledby="delete-edu-title-{{ edu.id }}">
+                                        <button type="button"
+                                                class="project-delete-modal__backdrop"
                                                 popovertarget="delete-edu-{{ edu.id }}"
                                                 popovertargetaction="hide"
-                                                aria-label="Tutup konfirmasi hapus">×</button>
-                                        <h2 id="delete-edu-title-{{ edu.id }}">Hapus Education?</h2>
-                                        <p>
-                                            Apakah Anda yakin ingin menghapus
-                                            <strong>{{ edu.institution }}</strong>?
-                                        </p>
-                                        <div class="project-delete-modal__actions">
+                                                aria-label="Tutup konfirmasi hapus"></button>
+                                        <div class="project-delete-modal__content">
                                             <button type="button"
-                                                    class="button button-secondary"
+                                                    class="project-delete-modal__close"
                                                     popovertarget="delete-edu-{{ edu.id }}"
-                                                    popovertargetaction="hide">Batal</button>
-                                            <form method="post" action="{% url 'main:delete_education' edu.id %}">
-                                                {% csrf_token %}
-                                                <button type="submit" class="button button-danger">Ya, Hapus</button>
-                                            </form>
+                                                    popovertargetaction="hide"
+                                                    aria-label="Tutup konfirmasi hapus">×</button>
+                                            <h2 id="delete-edu-title-{{ edu.id }}">Hapus Education?</h2>
+                                            <p>
+                                                Apakah Anda yakin ingin menghapus
+                                                <strong>{{ edu.institution }}</strong>?
+                                            </p>
+                                            <div class="project-delete-modal__actions">
+                                                <button type="button"
+                                                        class="button button-secondary"
+                                                        popovertarget="delete-edu-{{ edu.id }}"
+                                                        popovertargetaction="hide">Batal</button>
+                                                <form method="post" action="{% url 'main:delete_education' edu.id %}">
+                                                    {% csrf_token %}
+                                                    <button type="submit" class="button button-danger">Ya, Hapus</button>
+                                                </form>
+                                            </div>
                                         </div>
                                     </div>
                                 </div>
                             </div>
-                        </div>
+                        {% endif %}
                     </article>
                 {% empty %}
                     {% if institution_query %}

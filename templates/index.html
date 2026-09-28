@@ -24,7 +24,7 @@
                         <dt>Program</dt>    
                         <dd>{{ study_program }}</dd>
                     </div>
-                    <!-- DITAMBAHKAN: Menampilkan informasi Sesi Terakhir Login -->
+                    <!-- Menampilkan informasi Sesi Terakhir Login -->
                     <div class="meta-row">
                         <dt>Sesi Terakhir Login</dt>
                         <dd>{{ last_login }}</dd>
@@ -52,6 +52,39 @@
                     <h3>Python & Java</h3>
                     <p>Developing backend logic, object-oriented programming, and working with frameworks like Django.</p>
                 </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Section Projects (Langkah 3 & 5 Tutorial 04) -->
+    <section class="projects-section" id="projects">
+        <div class="container">
+            <div class="project-header">
+                <h2 class="section-title">Projects</h2>
+                
+                <!-- Hanya tampilkan tombol Tambah Project jika Superuser -->
+                {% if user.is_superuser %}
+                    <a href="{% url 'main:create_project' %}" class="button project-add-button">
+                        <span aria-hidden="true">+</span> Tambah Project
+                    </a>
+                {% endif %}
+            </div>
+
+            <div class="project-grid">
+                {% for project in projects %}
+                    <article class="project-card">
+                        <h3>{{ project.name }}</h3>
+                        <p class="project-date">Tahun: {{ project.date }}</p>
+                        <p class="project-description">{{ project.description }}</p>
+                        
+                        <div class="project-card-actions">
+                            <!-- Tombol Star (Bisa digunakan oleh semua user yang sudah login) -->
+                            {% include "components/project_star.html" with project=project %}
+                        </div>
+                    </article>
+                {% empty %}
+                    <p class="empty-state">Belum ada proyek yang ditambahkan.</p>
+                {% endfor %}
             </div>
         </div>
     </section>

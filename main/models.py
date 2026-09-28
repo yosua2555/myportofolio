@@ -1,5 +1,6 @@
 import uuid
 from django.db import models
+from django.contrib.auth.models import User
 
 class Experience(models.Model):
     EXPERIENCE_CHOICES = [
@@ -38,10 +39,16 @@ class Education(models.Model):
     def __str__(self):
         return f"{self.degree} - {self.institution}"
 
+
 class Project(models.Model):
-    name = models.CharField(max_length=255);
+    name = models.CharField(max_length=255)
     date = models.IntegerField()
     description = models.TextField()
+    
+    # DITAMBAHKAN (Tutorial 04 Bagian 3): Relasi ManyToMany ke User untuk fitur Star
+    starred_by = models.ManyToManyField(
+        User, related_name="starred_projects", blank=True
+    )
 
-    def __str__ (self):
+    def __str__(self):
         return self.name
