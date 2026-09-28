@@ -12,7 +12,7 @@
             <div class="project-header">
                 <h1>Education</h1>
                 
-                <!-- Hanya tampilkan tombol Tambah jika akun adalah Superuser -->
+                <!-- HANYA SUPERUSER: Tombol Tambah -->
                 {% if user.is_superuser %}
                     <a href="{% url 'main:create_education' %}" class="button project-add-button">
                         <span aria-hidden="true">+</span>
@@ -21,7 +21,7 @@
                 {% endif %}
             </div>
 
-            <!-- Form Search (Bisa diakses siapapun) -->
+            <!-- Form Search (Dapat diakses siapa saja) -->
             <form method="get" action="{% url 'main:show_education' %}" class="project-search">
                 <input type="search"
                        name="institution"
@@ -42,16 +42,18 @@
                         <p class="experience-description"><strong>{{ edu.degree }}</strong></p>
                         <p class="experience-description">{{ edu.description }}</p>
                         
-                        <!-- Hanya tampilkan kontrol Edit dan Hapus jika akun adalah Superuser -->
-                        {% if user.is_superuser %}
-                            <div class="project-card-actions">
-                                <div class="project-actions">
-                                    <!-- Tombol Edit -->
+                        <div class="project-card-actions">
+                            <div class="project-actions">
+                                
+                                <!-- SUPERUSER ATAU EDITOR: Tombol Edit -->
+                                {% if user.is_superuser or is_editor %}
                                     <a href="{% url 'main:update_education' edu.id %}" class="button button-secondary">
                                         Edit
                                     </a>
-                                    
-                                    <!-- Tombol Pemicu Modal Hapus -->
+                                {% endif %}
+                                
+                                <!-- HANYA SUPERUSER: Tombol & Modal Hapus -->
+                                {% if user.is_superuser %}
                                     <p class="experience-status">
                                         <button type="button"
                                                 class="button button-danger"
@@ -97,9 +99,10 @@
                                             </div>
                                         </div>
                                     </div>
-                                </div>
+                                {% endif %}
+
                             </div>
-                        {% endif %}
+                        </div>
                     </article>
                 {% empty %}
                     {% if institution_query %}
