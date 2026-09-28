@@ -49,10 +49,14 @@ def show_education(request):
     education_list = [item.object for item in education_objects]
     institution_query = request.GET.get("institution", "").strip()
 
+    # Cek role pengguna aktif
+    is_editor = is_editor_or_superuser(request.user)
+
     context = {
         "name": "Yosua Peitho Purba",
         "education_list": education_list,
         "institution_query": institution_query,
+        "is_editor": is_editor,  # Kirim ke template
     }
     return render(request, "education.html", context)
 
@@ -199,3 +203,61 @@ def get_projects_json(request):
         "json", projects, use_natural_foreign_keys=True
     )
     return HttpResponse(projects_json, content_type="application/json")
+
+# Helper function untuk mengecek apakah user adalah Editor atau Superuser
+def is_editor_or_superuser(user):
+    return user.is_authenticated and (user.is_superuser or user.groups.filter(name='Editor').exists())
+
+# 1. CREATE: Hanya Superuser (Pemilik)
+@login_required(login_url="/login/")
+def create_education(request):
+    if not request.user.is_superuser:
+        raise PermissionDenied  # 403 Forbidden untuk selain superuser
+
+    form = EducationForm(request.POST or None)
+    if request.method == "POST" and form.is_valid():
+        form.save()
+        messages.success(request, "Riwayat pendidikan baru berhasil ditambahkan!")
+        return redirect("main:show_education")
+
+    context = {
+        "name": "Yosua Peitho Purba",
+        "form": form,
+    }
+    return render(request, "education_form.html", context)
+
+
+# 2. UPDATE: Boleh untuk Superuser ATAU Editor
+@login_required(login_url="/login/")
+def update_education(request, education_id):
+    # Cek apakah user adalah Superuser atau tergabung dalam grup 'Editor'
+    if not is_editor_or_superuser(request.user):
+        raise PermissionDenied  # 403 Forbidden untuk Pengguna Biasa
+
+    education = get_object_or_404(Education, pk=education_id)
+    form = EducationForm(request.POST or None, instance=education)
+
+    if request.method == "POST" and form.is_valid():
+        form.save()
+        messages.success(request, "Riwayat pendidikan berhasil diperbarui!")
+        return redirect("main:show_education")
+
+    context = {
+        "name": "Yosua Peitho Purba",
+        "form": form,
+    }
+    return render(request, "education_form.html", context)
+
+
+# 3. DELETE: Hanya Superuser (Pemilik)
+@login_required(login_url="/login/")
+def delete_education(request, education_id):
+    if not request.user.is_superuser:
+        raise PermissionDenied  # 403 Forbidden untuk selain superuser
+
+    education = get_object_or_404(Education, pk=education_id)
+    if request.method == "POST":
+        education.delete()
+        messages.success(request, "Riwayat pendidikan berhasil dihapus!")
+        return redirect("main:show_education")
+    return redirect("main:show_education")
