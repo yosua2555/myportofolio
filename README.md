@@ -57,3 +57,15 @@ Ya, saya menggunakan elemen semantik HTML5 seperti <header>, <main>, <section>, 
   - Fungsi *view* merangkum string JSON tersebut ke dalam objek `HttpResponse` dengan header `content_type="application/json"` dan mengirimkannya kembali ke *client*.
      **Mengapa Perlu Serialization?**:
   Model Django atau QuerySet berupa objek Python kompleks yang tersimpan di dalam memori server dan tidak bisa ditransmisikan secara langsung melalui protokol HTTP. *Serialization* bertugas memutus (*convert*) struktur objek kompleks tersebut menjadi format teks standar (seperti string JSON/XML) agar dapat dikirim melalui jaringan dan dipahami oleh aplikasi *client* dalam bahasa pemrogramman apa pun.
+
+
+### Tugas 4
+
+## AI Disclosure
+
+- **Tools Digunakan**: Gemini AI
+- **Tujuan**: Membantu penyelesaian bug `ImportError`, perancangan otorisasi 4 peran (Pengunjung, Pengguna Biasa, Editor, Superuser), pembuatan komponen `project_star.html`, serta pengisian variabel cookie `last_login`.
+- **Perbaikan Manual**:
+  1. Menghapus fungsi duplikat (*duplicate functions*) pada `main/views.py`.
+  2. Menyesuaikan logika `is_editor_or_superuser` dengan helper group check `request.user.groups.filter(name='Editor').exists()`.
+  3. Mengatur struktur visibilitas tombol aksi pada template `templates/education.html` dan `templates/index.html`.
