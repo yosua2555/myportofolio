@@ -8,6 +8,10 @@ from main.views import (
     get_education_json,
     get_education_xml,
     delete_education,
+    create_project,
+    register,
+    login_user,
+    logout_user,
 )
 
 app_name = "main"
@@ -21,4 +25,8 @@ urlpatterns = [
     path("education/<uuid:education_id>/delete/", delete_education, name="delete_education"),
     path("api/education/", get_education_json, name="get_education_json"),
     path("xml/education/", get_education_xml, name="get_education_xml"),
+    path(),
+    path("register/", register, name="register"),
+    path("login/", login_user, name="login"),
+    path("logout/", logout_user, name="logout"),
 ]

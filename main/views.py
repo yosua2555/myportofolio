@@ -1,9 +1,12 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib import messages
+from django.contrib.auth import login, logout
+from django.contrib.auth.forms import AuthenticationForm, UserCreationForm
 from django.core import serializers
 from django.http import HttpResponse
 from main.models import Experience, Education
 from main.forms import EducationForm
+from main.views import ProjectForm
 
 def show_main(request):
     context = {
@@ -96,3 +99,44 @@ def update_education(request, education_id):
         "form": form,
     }
     return render(request, "education_form.html", context)
+
+def create_project(request):
+    form = ProjectForm(request.POST or None)
+
+    if request.method == "POST" and form.is_valid():
+        form.save()
+        return redirect("main:show main")
+
+    context = {"form" : form}
+    return render(request, "project_form.html", context)
+
+def register(request):
+    form = UserCreationForm(request.POST or None)
+    if request.method == "POST" and form.is_valid():
+        form.save()
+        messages.success(request, "Akun berhasil dibuat. Silakan login.")
+        return redirect("main:login")
+        
+    context = {
+        "name": "Yosua",  # Sesuaikan dengan nama kamu
+        "form": form,
+    }
+    return render(request, "register.html", context)
+
+
+def login_user(request):
+    form = AuthenticationForm(request, data=request.POST or None)
+    if request.method == "POST" and form.is_valid():
+        login(request, form.get_user())
+        return redirect("main:show_main")
+        
+    context = {
+        "name": "Yosua",  # Sesuaikan dengan nama kamu
+        "form": form,
+    }
+    return render(request, "login.html", context)
+
+
+def logout_user(request):
+    logout(request)
+    return redirect("main:show_main")
