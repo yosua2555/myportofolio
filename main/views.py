@@ -1,3 +1,5 @@
+import datetime
+
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib import messages
 from django.contrib.auth import login, logout
@@ -5,10 +7,13 @@ from django.contrib.auth.forms import AuthenticationForm, UserCreationForm
 from django.core import serializers
 from django.http import HttpResponse
 from main.models import Experience, Education
-from main.forms import EducationForm
-from main.views import ProjectForm
+from main.forms import EducationForm, ProjectForm  # DIBERSIHKAN: Impor dari main.forms
+
 
 def show_main(request):
+    # Membaca cookie last_login (Langkah 3)
+    last_login = request.COOKIES.get('last_login', 'Belum ada sesi login / Cookie tidak ditemukan')
+
     context = {
         "name": "Yosua Peitho Purba",
         "npm": "2506657402",
@@ -17,8 +22,10 @@ def show_main(request):
             "Information Student @ Universitas Indonesia | Software "
             "Development and Cyber Security Enthusiast"
         ),
+        "last_login": last_login,  # Ditambahkan ke context
     }
     return render(request, "index.html", context)
+
 
 def show_experience(request):
     context = {
@@ -26,6 +33,7 @@ def show_experience(request):
         "experience_list": Experience.objects.all(),
     }
     return render(request, "experience.html", context)
+
 
 def show_education(request):
     # Mengambil data dari JSON response lalu di-deserialize
@@ -44,6 +52,7 @@ def show_education(request):
     }
     return render(request, "education.html", context)
 
+
 def create_education(request):
     form = EducationForm(request.POST or None)
     if request.method == "POST" and form.is_valid():
@@ -57,6 +66,7 @@ def create_education(request):
     }
     return render(request, "education_form.html", context)
 
+
 def get_education_json(request):
     institution_query = request.GET.get("institution", "").strip()
     education_list = Education.objects.all()
@@ -66,6 +76,7 @@ def get_education_json(request):
         
     education_json = serializers.serialize("json", education_list)
     return HttpResponse(education_json, content_type="application/json")
+
 
 def get_education_xml(request):
     institution_query = request.GET.get("institution", "").strip()
@@ -77,6 +88,7 @@ def get_education_xml(request):
     education_xml = serializers.serialize("xml", education_list)
     return HttpResponse(education_xml, content_type="application/xml")
 
+
 def delete_education(request, education_id):
     education = get_object_or_404(Education, pk=education_id)
     if request.method == "POST":
@@ -84,6 +96,7 @@ def delete_education(request, education_id):
         messages.success(request, "Riwayat pendidikan berhasil dihapus!")
         return redirect("main:show_education")
     return redirect("main:show_education")
+
 
 def update_education(request, education_id):
     education = get_object_or_404(Education, pk=education_id)
@@ -100,15 +113,17 @@ def update_education(request, education_id):
     }
     return render(request, "education_form.html", context)
 
+
 def create_project(request):
     form = ProjectForm(request.POST or None)
 
     if request.method == "POST" and form.is_valid():
         form.save()
-        return redirect("main:show main")
+        return redirect("main:show_main")  # DIPERBAIKI: Typo 'show main' -> 'show_main'
 
-    context = {"form" : form}
+    context = {"form": form}
     return render(request, "project_form.html", context)
+
 
 def register(request):
     form = UserCreationForm(request.POST or None)
@@ -118,7 +133,7 @@ def register(request):
         return redirect("main:login")
         
     context = {
-        "name": "Yosua",  # Sesuaikan dengan nama kamu
+        "name": "Yosua Peitho Purba",
         "form": form,
     }
     return render(request, "register.html", context)
@@ -127,11 +142,16 @@ def register(request):
 def login_user(request):
     form = AuthenticationForm(request, data=request.POST or None)
     if request.method == "POST" and form.is_valid():
-        login(request, form.get_user())
-        return redirect("main:show_main")
+        user = form.get_user()
+        login(request, user)
+        
+        # Menyimpan Cookie last_login (Langkah 2)
+        response = redirect("main:show_main")
+        response.set_cookie('last_login', datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S'))
+        return response
         
     context = {
-        "name": "Yosua",  # Sesuaikan dengan nama kamu
+        "name": "Yosua Peitho Purba",
         "form": form,
     }
     return render(request, "login.html", context)
@@ -139,4 +159,8 @@ def login_user(request):
 
 def logout_user(request):
     logout(request)
-    return redirect("main:show_main")
+    
+    # Menghapus Cookie last_login saat Logout (Langkah 4)
+    response = redirect("main:show_main")
+    response.delete_cookie('last_login')
+    return response
