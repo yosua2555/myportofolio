@@ -13,6 +13,7 @@ from main.views import (
     login_user,
     logout_user,
     toggle_star,
+    get_projects_json,
 )
 
 app_name = "main"
@@ -31,4 +32,5 @@ urlpatterns = [
     path("login/", login_user, name="login"),
     path("logout/", logout_user, name="logout"),
     path("project/star/<int:project_id>/", toggle_star, name="toggle_star"),
+    path("get-projects-json/", get_projects_json, name="get_projects_json"),
 ]

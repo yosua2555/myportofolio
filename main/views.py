@@ -8,6 +8,7 @@ from django.contrib.auth.decorators import login_required
 from django.core.exceptions import PermissionDenied
 from django.core import serializers
 from django.http import HttpResponse
+from django.http import JsonResponse
 
 # Import model & form yang dibutuhkan
 from main.models import Experience, Education, Project
@@ -16,8 +17,7 @@ from main.forms import EducationForm, ProjectForm
 
 def show_main(request):
     last_login = request.COOKIES.get('last_login', 'Belum ada sesi login / Cookie tidak ditemukan')
-    projects = Project.objects.all()
-
+    
     context = {
         "name": "Yosua Peitho Purba",
         "npm": "2506657402",
@@ -27,7 +27,6 @@ def show_main(request):
             "Development and Cyber Security Enthusiast"
         ),
         "last_login": last_login,
-        "projects": projects,
     }
     return render(request, "index.html", context)
 
@@ -198,11 +197,33 @@ def logout_user(request):
     return response
 
 def get_projects_json(request):
-    projects = Project.objects.all()
-    projects_json = serializers.serialize(
-        "json", projects, use_natural_foreign_keys=True
-    )
-    return HttpResponse(projects_json, content_type="application/json")
+    name_query = request.GET.get("name", "").strip()
+    # Mengambil semua proyek beserta data starred_by
+    projects = Project.objects.prefetch_related('starred_by').all()
+    
+    if name_query:
+        projects = projects.filter(name__icontains=name_query)
+
+    data = []
+    for project in projects:
+        starred_users = project.starred_by.all()
+        # Cek apakah pengguna aktif mem-star proyek ini
+        is_starred = request.user in starred_users if request.user.is_authenticated else False
+        starred_by_names = ", ".join([u.username for u in starred_users]) if starred_users else "Belum ada"
+
+        data.append({
+            "pk": str(project.id),
+            "fields": {
+                "name": project.name,
+                "date": project.date,
+                "description": project.description,
+                "star_count": starred_users.count(),
+                "is_starred": is_starred,
+                "starred_by_names": starred_by_names,
+            }
+        })
+        
+    return JsonResponse(data, safe=False)
 
 # Helper function untuk mengecek apakah user adalah Editor atau Superuser
 def is_editor_or_superuser(user):

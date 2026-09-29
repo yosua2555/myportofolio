@@ -604,7 +604,7 @@
         background: rgba(255, 255, 255, 0.25);
         font-size: 0.8rem;
     }
-    
+
     /* toast */
     .toast-component {
     position: fixed;
@@ -653,4 +653,8 @@
     .toast-success { border-left: 4px solid #22c55e; }
     .toast-error { border-left: 4px solid #b42318; }
     .toast-normal { border-left: 4px solid var(--accent); }
+
+    .hide {
+    display: none !important;
+    }
 }

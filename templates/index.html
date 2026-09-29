@@ -56,7 +56,7 @@
         </div>
     </section>
 
-    <!-- Section Projects (Langkah 3 & 5 Tutorial 04) -->
+    <!-- Section Projects dengan AJAX (Tutorial 05) -->
     <section class="projects-section" id="projects">
         <div class="container">
             <div class="project-header">
@@ -70,23 +70,109 @@
                 {% endif %}
             </div>
 
-            <div class="project-grid">
-                {% for project in projects %}
-                    <article class="project-card">
-                        <h3>{{ project.name }}</h3>
-                        <p class="project-date">Tahun: {{ project.date }}</p>
-                        <p class="project-description">{{ project.description }}</p>
-                        
-                        <div class="project-card-actions">
-                            <!-- Tombol Star (Bisa digunakan oleh semua user yang sudah login) -->
-                            {% include "components/project_star.html" with project=project %}
-                        </div>
-                    </article>
-                {% empty %}
-                    <p class="empty-state">Belum ada proyek yang ditambahkan.</p>
-                {% endfor %}
-            </div>
+            <!-- Form Search AJAX -->
+            <form id="search-form" class="project-search" style="margin-bottom: 1.5rem;">
+                <input type="search"
+                       id="search-input"
+                       name="name"
+                       placeholder="Cari berdasarkan nama proyek..."
+                       class="project-search__input"
+                       aria-label="Cari berdasarkan nama proyek">
+                <button type="submit" class="button">Cari</button>
+            </form>
+
+            <!-- Status Indikator Loading, Error, Empty -->
+            <p id="projects-loading" class="empty-state">Memuat projects...</p>
+            <p id="projects-error" class="empty-state hide">Gagal memuat data projects. Silakan coba lagi.</p>
+            <p id="projects-empty" class="empty-state hide">Belum ada proyek yang ditambahkan atau ditemukan.</p>
+
+            <!-- Container Grid tempat JavaScript me-render proyek -->
+            <div id="projects-grid" class="project-grid hide"></div>
         </div>
     </section>
 </main>
+
+<!-- Skrip JS AJAX untuk Fetch Data Proyek -->
+<script>
+    let currentAbortController = null;
+
+    function displayPageSection({ showLoading = false, showError = false, showEmpty = false, showGrid = false }) {
+        document.getElementById("projects-loading").classList.toggle("hide", !showLoading);
+        document.getElementById("projects-error").classList.toggle("hide", !showError);
+        document.getElementById("projects-empty").classList.toggle("hide", !showEmpty);
+        document.getElementById("projects-grid").classList.toggle("hide", !showGrid);
+    }
+
+    function buildProjectCardElement(project) {
+        const pk = project.pk;
+        const fields = project.fields;
+
+        const article = document.createElement("article");
+        article.className = "project-card";
+
+        article.innerHTML = `
+            <h3>${fields.name}</h3>
+            <p class="project-date">Tahun: ${fields.date}</p>
+            <p class="project-description">${fields.description}</p>
+            <div class="project-card-actions">
+                <form method="POST" action="/project/star/${pk}/" class="star-form">
+                    {% csrf_token %}
+                    <button type="submit" 
+                            class="button button-star ${fields.is_starred ? 'is-starred' : ''}"
+                            title="Pemberi star: ${fields.starred_by_names}">
+                        ★ ${fields.is_starred ? 'Unstar' : 'Star'}
+                        <span class="star-count">${fields.star_count}</span>
+                    </button>
+                </form>
+            </div>
+        `;
+        return article;
+    }
+
+    async function fetchProjects(query = "") {
+        if (currentAbortController) {
+            currentAbortController.abort();
+        }
+        currentAbortController = new AbortController();
+
+        displayPageSection({ showLoading: true });
+
+        try {
+            const response = await fetch(`/get-projects-json/?name=${encodeURIComponent(query)}`, {
+                signal: currentAbortController.signal
+            });
+
+            if (!response.ok) {
+                throw new Error("Network response was not ok");
+            }
+
+            const projects = await response.json();
+            const gridContainer = document.getElementById("projects-grid");
+            gridContainer.innerHTML = "";
+
+            if (projects.length === 0) {
+                displayPageSection({ showEmpty: true });
+            } else {
+                projects.forEach(project => {
+                    gridContainer.appendChild(buildProjectCardElement(project));
+                });
+                displayPageSection({ showGrid: true });
+            }
+        } catch (error) {
+            if (error.name !== "AbortError") {
+                displayPageSection({ showError: true });
+            }
+        }
+    }
+
+    document.getElementById("search-form").addEventListener("submit", function (e) {
+        e.preventDefault();
+        const query = document.getElementById("search-input").value.trim();
+        fetchProjects(query);
+    });
+
+    document.addEventListener("DOMContentLoaded", () => {
+        fetchProjects();
+    });
+</script>
 {% endblock content %}
