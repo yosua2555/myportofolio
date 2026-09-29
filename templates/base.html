@@ -39,5 +39,12 @@
             <p>&copy; 2026 {{ name }}. Fakultas Ilmu Komputer, Universitas Indonesia.</p>
         </div>
     </footer>
+
+    {% include "components/toast.html" %}
+    <script src="{% static 'js/toast.js' %}"></script>
+
+    <button type="button" class="button" onclick="showToast('Berhasil!', 'Ini adalah pesan notifikasi toast uji coba.', 'success')">
+    Test Toast Notifikasi
+    </button>
 </body>
 </html>
