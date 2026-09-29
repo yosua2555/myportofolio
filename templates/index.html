@@ -62,11 +62,13 @@
             <div class="project-header">
                 <h2 class="section-title">Projects</h2>
                 
-                <!-- Hanya tampilkan tombol Tambah Project jika Superuser -->
+                <!-- Hanya tampilkan tombol jika Superuser -->
                 {% if user.is_superuser %}
-                    <a href="{% url 'main:create_project' %}" class="button project-add-button">
+                    <button type="button"
+                            class="button project-add-button"
+                            popovertarget="add-project-modal">
                         <span aria-hidden="true">+</span> Tambah Project
-                    </a>
+                    </button>
                 {% endif %}
             </div>
 
@@ -92,7 +94,12 @@
     </section>
 </main>
 
-<!-- Skrip JS AJAX untuk Fetch Data Proyek -->
+<!-- Include Modal Tambah Proyek untuk Superuser -->
+{% if user.is_superuser %}
+    {% include "components/project_form_modal.html" %}
+{% endif %}
+
+<!-- Skrip JS AJAX Lengkap (Fetch Data, Search Debouncing, Add Project AJAX, & XSS Escaping) -->
 <script>
     let currentAbortController = null;
     
@@ -103,6 +110,44 @@
     // Ambil elemen form dan input
     const searchForm = document.getElementById("search-form");
     const searchInput = document.getElementById("search-input");
+
+    // Endpoint dan Form Tambah Proyek AJAX
+    const CREATE_PROJECT_ENDPOINT = "{% url 'main:create_project_ajax' %}";
+    const projectForm = document.getElementById('project-form');
+
+    // DITAMBAHKAN: Mengubah karakter khusus HTML menjadi entity agar aman dari XSS
+    function escapeHtml(value) {
+        return String(value ?? '')
+            .replaceAll('&', '&amp;')
+            .replaceAll('<', '&lt;')
+            .replaceAll('>', '&gt;')
+            .replaceAll('"', '&quot;')
+            .replaceAll("'", '&#39;');
+    }
+
+    // Helper untuk menutup modal popover
+    function closeProjectModal() {
+        const modal = document.getElementById("add-project-modal");
+        if (modal) {
+            modal.hidePopover();
+        }
+    }
+
+    // Helper membaca nilai cookie untuk token CSRF
+    function getCookie(name) {
+        let cookieValue = null;
+        if (document.cookie && document.cookie !== '') {
+            const cookies = document.cookie.split(';');
+            for (let i = 0; i < cookies.length; i++) {
+                const cookie = cookies[i].trim();
+                if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                    break;
+                }
+            }
+        }
+        return cookieValue;
+    }
 
     function displayPageSection({ showLoading = false, showError = false, showEmpty = false, showGrid = false }) {
         document.getElementById("projects-loading").classList.toggle("hide", !showLoading);
@@ -118,16 +163,21 @@
         const article = document.createElement("article");
         article.className = "project-card";
 
+        // DIPERBAIKI: Menggunakan escapeHtml untuk memproteksi elemen dari serangan XSS
+        const starTitle = fields.star_count > 0
+            ? `Dibintangi oleh ${escapeHtml(fields.starred_by_names)}`
+            : "Jadilah yang pertama memberi star";
+
         article.innerHTML = `
-            <h3>${fields.name}</h3>
-            <p class="project-date">Tahun: ${fields.date}</p>
-            <p class="project-description">${fields.description}</p>
+            <h3>${escapeHtml(fields.name)}</h3>
+            <p class="project-date">Tahun: ${escapeHtml(fields.date)}</p>
+            <p class="project-description">${escapeHtml(fields.description)}</p>
             <div class="project-card-actions">
                 <form method="POST" action="/project/star/${pk}/" class="star-form">
                     {% csrf_token %}
                     <button type="submit" 
                             class="button button-star ${fields.is_starred ? 'is-starred' : ''}"
-                            title="Pemberi star: ${fields.starred_by_names}">
+                            title="${starTitle}">
                         ★ ${fields.is_starred ? 'Unstar' : 'Star'}
                         <span class="star-count">${fields.star_count}</span>
                     </button>
@@ -173,12 +223,45 @@
         }
     }
 
-    // Fungsi utilitas pencarian
     function searchProjects() {
         fetchProjects(searchInput.value.trim());
     }
 
-    // Event 1: Pencarian realtime saat user mengetik (Debounced)
+    // Fungsi Mengirim Data Form Tambah Proyek via Fetch API (AJAX)
+    async function addProject(event) {
+        event.preventDefault();
+        const submitButton = projectForm.querySelector('button[type="submit"]');
+        submitButton.disabled = true;
+
+        try {
+            const response = await fetch(CREATE_PROJECT_ENDPOINT, {
+                method: 'POST',
+                headers: { 'X-CSRFToken': getCookie('csrftoken') },
+                body: new FormData(projectForm),
+            });
+
+            const result = await response.json().catch(() => ({}));
+
+            if (response.ok) {
+                projectForm.reset();
+                closeProjectModal();
+                showToast('Berhasil', 'Proyek baru berhasil ditambahkan!', 'success');
+                fetchProjects(searchInput.value.trim());
+            } else {
+                const errorMessages = result.errors
+                    ? Object.values(result.errors).flat().map(error => error.message)
+                    : [result.message || `Terjadi kesalahan (status ${response.status}).`];
+                showToast('Gagal menambahkan proyek', errorMessages.join(' '), 'error');
+            }
+        } catch (error) {
+            console.error('Error adding project:', error);
+            showToast('Gagal menambahkan proyek', 'Tidak dapat terhubung ke server. Silakan coba lagi.', 'error');
+        } finally {
+            submitButton.disabled = false;
+        }
+    }
+
+    // Event Listener Search Input (Debounced)
     searchInput.addEventListener("input", function() {
         clearTimeout(searchDebounceTimer);
         searchDebounceTimer = setTimeout(function() {
@@ -186,14 +269,19 @@
         }, SEARCH_DEBOUNCE_DELAY);
     });
 
-    // Event 2: Pencarian saat menekan tombol Cari atau Enter
+    // Event Listener Search Form Submit
     searchForm.addEventListener("submit", function(event) {
         event.preventDefault();
         clearTimeout(searchDebounceTimer);
         searchProjects();
     });
 
-    // Load data awal saat halaman dibuka
+    // Attach Event Listener ke form tambah proyek jika ada
+    if (projectForm) {
+        projectForm.addEventListener('submit', addProject);
+    }
+
+    // Load data proyek pertama kali saat halaman dibuka
     document.addEventListener("DOMContentLoaded", () => {
         fetchProjects();
     });

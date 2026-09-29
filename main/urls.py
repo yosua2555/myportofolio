@@ -14,6 +14,7 @@ from main.views import (
     logout_user,
     toggle_star,
     get_projects_json,
+    create_project_ajax,
 )
 
 app_name = "main"
@@ -33,4 +34,5 @@ urlpatterns = [
     path("logout/", logout_user, name="logout"),
     path("project/star/<int:project_id>/", toggle_star, name="toggle_star"),
     path("get-projects-json/", get_projects_json, name="get_projects_json"),
+    path("projects/add-ajax/", create_project_ajax, name="create_project_ajax"),
 ]

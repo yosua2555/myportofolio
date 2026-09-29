@@ -10,6 +10,8 @@ from django.core import serializers
 from django.http import HttpResponse
 from django.http import JsonResponse
 
+from django.views.decorators.http import require_POST
+
 # Import model & form yang dibutuhkan
 from main.models import Experience, Education, Project
 from main.forms import EducationForm, ProjectForm
@@ -27,6 +29,7 @@ def show_main(request):
             "Development and Cyber Security Enthusiast"
         ),
         "last_login": last_login,
+        "form" : ProjectForm(),
     }
     return render(request, "index.html", context)
 
@@ -282,3 +285,21 @@ def delete_education(request, education_id):
         messages.success(request, "Riwayat pendidikan berhasil dihapus!")
         return redirect("main:show_education")
     return redirect("main:show_education")
+
+@require_POST
+def create_project_ajax(request):
+    if not request.user.is_superuser:
+        return JsonResponse(
+            {"message": "Hanya pemilik portofolio yang dapat menambahkan proyek."},
+            status=403,
+        )
+        
+    form = ProjectForm(request.POST)
+    if form.is_valid():
+        project = form.save()
+        return JsonResponse(
+            {"message": "Proyek berhasil ditambahkan.", "pk": str(project.id)},
+            status=201,
+        )
+        
+    return JsonResponse({"errors": form.errors.get_json_data()}, status=400)

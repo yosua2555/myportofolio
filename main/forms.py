@@ -1,5 +1,9 @@
+from django import forms
+from django.core.exceptions import ValidationError
 from django.forms import ModelForm, TextInput, Textarea, NumberInput
+from django.utils.html import strip_tags
 from main.models import Education, Project
+
 
 class EducationForm(ModelForm):
     class Meta:
@@ -49,7 +53,7 @@ class EducationForm(ModelForm):
             ),
         }
 
-# DITAMBAHKAN: Form untuk model Project
+
 class ProjectForm(ModelForm):
     class Meta:
         model = Project
@@ -78,3 +82,16 @@ class ProjectForm(ModelForm):
                 }
             ),
         }
+
+    # DITAMBAHKAN: Method validasi & pembersihan XSS di server
+    def clean_name(self):
+        name = strip_tags(self.cleaned_data["name"]).strip()
+        if not name:
+            raise ValidationError("Nama proyek tidak boleh hanya berisi tag HTML.")
+        return name
+
+    def clean_description(self):
+        description = strip_tags(self.cleaned_data["description"]).strip()
+        if not description:
+            raise ValidationError("Deskripsi proyek tidak boleh hanya berisi tag HTML.")
+        return description
