@@ -95,6 +95,14 @@
 <!-- Skrip JS AJAX untuk Fetch Data Proyek -->
 <script>
     let currentAbortController = null;
+    
+    // Konfigurasi Debounce
+    const SEARCH_DEBOUNCE_DELAY = 300;
+    let searchDebounceTimer;
+
+    // Ambil elemen form dan input
+    const searchForm = document.getElementById("search-form");
+    const searchInput = document.getElementById("search-input");
 
     function displayPageSection({ showLoading = false, showError = false, showEmpty = false, showGrid = false }) {
         document.getElementById("projects-loading").classList.toggle("hide", !showLoading);
@@ -165,12 +173,27 @@
         }
     }
 
-    document.getElementById("search-form").addEventListener("submit", function (e) {
-        e.preventDefault();
-        const query = document.getElementById("search-input").value.trim();
-        fetchProjects(query);
+    // Fungsi utilitas pencarian
+    function searchProjects() {
+        fetchProjects(searchInput.value.trim());
+    }
+
+    // Event 1: Pencarian realtime saat user mengetik (Debounced)
+    searchInput.addEventListener("input", function() {
+        clearTimeout(searchDebounceTimer);
+        searchDebounceTimer = setTimeout(function() {
+            searchProjects();
+        }, SEARCH_DEBOUNCE_DELAY);
     });
 
+    // Event 2: Pencarian saat menekan tombol Cari atau Enter
+    searchForm.addEventListener("submit", function(event) {
+        event.preventDefault();
+        clearTimeout(searchDebounceTimer);
+        searchProjects();
+    });
+
+    // Load data awal saat halaman dibuka
     document.addEventListener("DOMContentLoaded", () => {
         fetchProjects();
     });
