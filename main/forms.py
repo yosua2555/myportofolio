@@ -94,4 +94,4 @@ class ProjectForm(ModelForm):
         description = strip_tags(self.cleaned_data["description"]).strip()
         if not description:
             raise ValidationError("Deskripsi proyek tidak boleh hanya berisi tag HTML.")
-        return description
+        return description  
