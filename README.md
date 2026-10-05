@@ -69,3 +69,18 @@ Ya, saya menggunakan elemen semantik HTML5 seperti <header>, <main>, <section>, 
   1. Menghapus fungsi duplikat (*duplicate functions*) pada `main/views.py`.
   2. Menyesuaikan logika `is_editor_or_superuser` dengan helper group check `request.user.groups.filter(name='Editor').exists()`.
   3. Mengatur struktur visibilitas tombol aksi pada template `templates/education.html` dan `templates/index.html`.
+
+
+  ### Tugas 5
+  
+  1. **Apa itu Debouncing dan mengapa penting pada fitur pencarian berbasis AJAX?**  
+   **Debouncing** adalah teknik pemrograman yang menunda eksekusi suatu fungsi hingga beberapa saat (misalnya 300ms) setelah peristiwa (*event*) terakhir berhenti dipanggil.  
+   * **Mengapa penting?** Pada fitur pencarian tanpa debouncing, setiap karakter yang diketik pengguna akan langsung memicu pengiriman *request* HTTP via AJAX ke server. Hal ini menyebabkan penumpukan *network request* yang sia-sia, beban server melonjak, dan potensi masalah *race condition* pada tampilan UI. Dengan debouncing, *request* AJAX baru dikirim setelah pengguna berhenti mengetik sejenak.
+
+2. **Fungsi `await` pada `fetch()` dan dampaknya jika tidak menggunakannya:**  
+   Fungsi `await` digunakan untuk menghentikan sementara eksekusi fungsi `async` sampai objek `Promise` yang dikembalikan oleh `fetch()` selesai (*resolved* atau *rejected*).  
+   * **Jika tidak menggunakan `await`**: Variabel penampung hasil `fetch()` tidak berisi respon HTTP nyata, melainkan objek `Promise` dalam status *pending*. Hal ini menyebabkan kode berikutnya (seperti `.json()`) gagal dieksekusi atau menghasilkan error *undefined* karena JavaScript langsung mengeksekusi baris berikutnya tanpa menunggu data selesai diunduh dari server.
+
+3. **Apa itu serangan XSS (Cross-Site Scripting) dan mengapa rendering AJAX/JavaScript lebih rentan dibandingkan Django Template?**  
+   **Cross-Site Scripting (XSS)** adalah jenis serangan di mana penyerang menyisipkan skrip JavaScript berbahaya ke dalam aplikasi web yang kemudian dieksekusi oleh browser pengguna lain.  
+   * **Mengapa AJAX/JavaScript lebih rentan?** Secara bawaan, Django Template Engine memiliki fitur **auto-escaping** otomatis yang mengubah karakter khusus HTML (seperti `<` dan `>`) menjadi entitas aman (`&lt;` dan `&gt;`). Namun, saat kita menggunakan AJAX dan me-render data ke elemen HTML menggunakan properti JavaScript seperti `innerHTML`, fitur perlindungan Django hilang. Browser akan menafsirkan data string tersebut langsung sebagai struktur HTML/skrip JavaScript aktif, sehingga membuka celah Stored XSS jika data dari server mengandung skrip berbahaya. Oleh karena itu, kita wajib melakukan sanitasi manual di sisi client menggunakan fungsi `escapeHtml()` atau `textContent`.

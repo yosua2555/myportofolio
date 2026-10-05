@@ -12,6 +12,8 @@
             <p class="section-kicker">Riwayat Pendidikan</p>
             <div class="project-header">
                 <h1>Education</h1>
+                
+                <!-- HANYA SUPERUSER: Tombol Tambah Education -->
                 {% if user.is_superuser %}
                     <button type="button" class="button project-add-button" popovertarget="add-edu-modal">
                         <span aria-hidden="true">+</span> Tambah Education
@@ -36,9 +38,13 @@
     </section>
 </main>
 
+<!-- Include Modal Tambah Education untuk Superuser -->
 {% if user.is_superuser %}
     {% include "components/education_form_modal.html" %}
 {% endif %}
+
+{{ user.is_superuser|json_script:"is-superuser-data" }}
+{{ is_editor|json_script:"is-editor-data" }}
 
 <script>
     let currentAbortController = null;
@@ -49,8 +55,9 @@
     const searchInput = document.getElementById("edu-search-input");
     const CREATE_EDU_ENDPOINT = "{% url 'main:create_education_ajax' %}";
 
-    const isSuperuser = "{{ user.is_superuser|yesno:'true,false' }}" === "true";
-    const isEditor = "{{ is_editor|yesno:'true,false' }}" === "true";
+    // Pengecekan role menggunakan ekspresi boolean yang aman dari error Linter / JS
+    const isSuperuser = JSON.parse(document.getElementById('is-superuser-data').textContent);
+    const isEditor = JSON.parse(document.getElementById('is-editor-data').textContent);
 
     function escapeHtml(value) {
         return String(value ?? '')
