@@ -3,6 +3,8 @@ from django.core.exceptions import ValidationError
 from django.forms import ModelForm, TextInput, Textarea, NumberInput
 from django.utils.html import strip_tags
 from main.models import Education, Project
+from django.utils.html import strip_tags
+from django.core.exceptions import ValidationError
 
 
 class EducationForm(ModelForm):
@@ -95,3 +97,15 @@ class ProjectForm(ModelForm):
         if not description:
             raise ValidationError("Deskripsi proyek tidak boleh hanya berisi tag HTML.")
         return description  
+
+    def clean_institution(self):
+        institution = strip_tags(self.cleaned_data["institution"]).strip()
+        if not institution:
+            raise ValidationError("Nama instansi tidak boleh hanya berisi tag HTML.")
+        return institution
+
+    def clean_degree(self):
+        degree = strip_tags(self.cleaned_data["degree"]).strip()
+        if not degree:
+            raise ValidationError("Gelar/Program tidak boleh hanya berisi tag HTML.")
+        return degree
