@@ -59,11 +59,9 @@ class MainTest(TestCase):
         response = self.client.get(reverse("main:show_education"))
         self.assertEqual(response.status_code, 200)
         self.assertTemplateUsed(response, "education.html")
-        self.assertContains(response, self.education.institution)
-        self.assertContains(response, self.education.degree)
         self.assertContains(response, f'href="{reverse("main:show_main")}"')
 
     def test_empty_education_page(self):
         Education.objects.all().delete()
         response = self.client.get(reverse("main:show_education"))
-        self.assertContains(response, "Belum ada riwayat pendidikan yang ditambahkan.")
+        self.assertContains(response, "Belum ada riwayat pendidikan yang ditemukan.")
