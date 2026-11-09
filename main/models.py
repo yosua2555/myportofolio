@@ -35,17 +35,19 @@ class Education(models.Model):
     description = models.TextField()                # Deskripsi/pencapaian
     started_year = models.IntegerField()            # Misal: 2025
     ended_year = models.IntegerField(blank=True, null=True)  # Null kalau masih berjalan
+    starred_by = models.ManyToManyField(
+        User, related_name="starred_educations", blank=True
+    )
 
     def __str__(self):
         return f"{self.degree} - {self.institution}"
 
 
 class Project(models.Model):
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     name = models.CharField(max_length=255)
     date = models.IntegerField()
     description = models.TextField()
-    
-    # DITAMBAHKAN (Tutorial 04 Bagian 3): Relasi ManyToMany ke User untuk fitur Star
     starred_by = models.ManyToManyField(
         User, related_name="starred_projects", blank=True
     )
