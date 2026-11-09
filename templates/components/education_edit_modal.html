@@ -1,0 +1,57 @@
+<div id="edit-edu-modal"
+     class="project-form-modal"
+     popover="auto"
+     role="dialog"
+     aria-modal="true"
+     aria-labelledby="edit-edu-modal-title">
+    <button type="button"
+            class="project-form-modal__backdrop"
+            popovertarget="edit-edu-modal"
+            popovertargetaction="hide"
+            aria-label="Tutup form edit pendidikan"></button>
+    <div class="project-form-modal__content">
+        <button type="button"
+                class="project-form-modal__close"
+                popovertarget="edit-edu-modal"
+                popovertargetaction="hide"
+                aria-label="Tutup form edit pendidikan">×</button>
+        <h2 id="edit-edu-modal-title">Edit Riwayat Pendidikan</h2>
+        
+        <form id="edit-edu-form" class="project-form">
+            <input type="hidden" id="edit-edu-id" name="id">
+            
+            <div class="form-group">
+                <label for="edit-edu-institution">Nama Instansi / Universitas</label>
+                <input type="text" id="edit-edu-institution" name="institution" class="form-control" required placeholder="Universitas Indonesia" maxlength="255">
+            </div>
+
+            <div class="form-group">
+                <label for="edit-edu-degree">Gelar / Program</label>
+                <input type="text" id="edit-edu-degree" name="degree" class="form-control" required placeholder="S1 Sistem Informasi" maxlength="255">
+            </div>
+
+            <div class="form-group">
+                <label for="edit-edu-description">Deskripsi</label>
+                <textarea id="edit-edu-description" name="description" rows="3" class="form-control" placeholder="Deskripsikan kegiatan akademik atau prestasi selama studi..."></textarea>
+            </div>
+
+            <div class="form-group">
+                <label for="edit-edu-started-year">Tahun Mulai</label>
+                <input type="number" id="edit-edu-started-year" name="started_year" class="form-control" required placeholder="2025">
+            </div>
+
+            <div class="form-group">
+                <label for="edit-edu-ended-year">Tahun Selesai (Opsional)</label>
+                <input type="number" id="edit-edu-ended-year" name="ended_year" class="form-control" placeholder="2029 (Biarkan kosong jika masih berlangsung)">
+            </div>
+
+            <div class="project-form-modal__actions">
+                <button type="button"
+                        class="button button-secondary"
+                        popovertarget="edit-edu-modal"
+                        popovertargetaction="hide">Batal</button>
+                <button type="submit" class="button">Simpan Perubahan</button>
+            </div>
+        </form>
+    </div>
+</div>
