@@ -44,11 +44,14 @@ class ProjectAPITest(APITestCase):
         self.assertEqual(self.client.get(url).status_code, status.HTTP_404_NOT_FOUND)
 
     def test_guest_and_visitor_cannot_write(self):
-        for user in (None, self.visitor):
+        for user, expected_status in (
+            (None, status.HTTP_401_UNAUTHORIZED),
+            (self.visitor, status.HTTP_403_FORBIDDEN),
+        ):
             self.client.force_authenticate(user=user)
-            self.assertEqual(self.client.post(self.list_url, self.payload, format="json").status_code, 403)
-            self.assertEqual(self.client.patch(self.detail_url, {"name": "Changed"}, format="json").status_code, 403)
-            self.assertEqual(self.client.delete(self.detail_url).status_code, 403)
+            self.assertEqual(self.client.post(self.list_url, self.payload, format="json").status_code, expected_status)
+            self.assertEqual(self.client.patch(self.detail_url, {"name": "Changed"}, format="json").status_code, expected_status)
+            self.assertEqual(self.client.delete(self.detail_url).status_code, expected_status)
         self.assertEqual(Project.objects.count(), 1)
 
     def test_owner_can_create(self):
@@ -79,7 +82,7 @@ class ProjectAPITest(APITestCase):
         self.assertFalse(Project.objects.filter(pk=self.project.id).exists())
 
     def test_star_requires_login_and_toggles(self):
-        self.assertEqual(self.client.post(self.star_url).status_code, status.HTTP_403_FORBIDDEN)
+        self.assertEqual(self.client.post(self.star_url).status_code, status.HTTP_401_UNAUTHORIZED)
         self.client.force_authenticate(user=self.visitor)
         response = self.client.post(self.star_url)
         self.assertTrue(response.data["is_starred"])
@@ -152,25 +155,28 @@ class EducationAPITest(APITestCase):
         self.assertEqual(self.client.get(url).status_code, status.HTTP_404_NOT_FOUND)
 
     def test_guest_and_visitor_cannot_write(self):
-        for user in (None, self.visitor):
+        for user, expected_status in (
+            (None, status.HTTP_401_UNAUTHORIZED),
+            (self.visitor, status.HTTP_403_FORBIDDEN),
+        ):
             self.client.force_authenticate(user=user)
             # Create (POST) ditolak
             post_res = self.client.post(self.list_url, self.payload, format="json")
-            self.assertEqual(post_res.status_code, status.HTTP_403_FORBIDDEN)
+            self.assertEqual(post_res.status_code, expected_status)
             self.assertEqual(Education.objects.count(), 1)
 
             # Update (PATCH & PUT) ditolak
             patch_res = self.client.patch(self.detail_url, {"degree": "Hacked"}, format="json")
-            self.assertEqual(patch_res.status_code, status.HTTP_403_FORBIDDEN)
+            self.assertEqual(patch_res.status_code, expected_status)
             self.education.refresh_from_db()
             self.assertEqual(self.education.degree, "S1 Sistem Informasi")
 
             put_res = self.client.put(self.detail_url, self.payload, format="json")
-            self.assertEqual(put_res.status_code, status.HTTP_403_FORBIDDEN)
+            self.assertEqual(put_res.status_code, expected_status)
 
             # Delete (DELETE) ditolak
             del_res = self.client.delete(self.detail_url)
-            self.assertEqual(del_res.status_code, status.HTTP_403_FORBIDDEN)
+            self.assertEqual(del_res.status_code, expected_status)
             self.assertTrue(Education.objects.filter(pk=self.education.id).exists())
 
     def test_editor_permissions(self):
@@ -253,7 +259,7 @@ class EducationAPITest(APITestCase):
 
     def test_star_requires_login_and_toggles(self):
         # Pengunjung tanpa login ditolak memberi star
-        self.assertEqual(self.client.post(self.star_url).status_code, status.HTTP_403_FORBIDDEN)
+        self.assertEqual(self.client.post(self.star_url).status_code, status.HTTP_401_UNAUTHORIZED)
 
         # Pengguna biasa login dapat memberi star
         self.client.force_authenticate(user=self.visitor)
@@ -281,3 +287,55 @@ class EducationAPITest(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
         # Pastikan tidak ada data baru tersimpan di database
         self.assertEqual(Education.objects.count(), 1)
+
+
+class TokenAuthAPITest(APITestCase):
+    def setUp(self):
+        self.owner = User.objects.create_superuser(
+            username="token_owner",
+            password="secret-password",
+            email="token_owner@example.com",
+        )
+        self.token_url = reverse("api:api_token_auth")
+        self.logout_url = reverse("api:api_logout")
+        self.project_list_url = reverse("api:project-list")
+
+    def test_token_login_create_project_and_logout(self):
+        # Login dengan kredensial valid mengembalikan token
+        token_res = self.client.post(
+            self.token_url,
+            {"username": "token_owner", "password": "secret-password"},
+            format="json",
+        )
+        self.assertEqual(token_res.status_code, status.HTTP_200_OK)
+        token = token_res.data["token"]
+        self.assertTrue(token)
+
+        # POST proyek dengan Authorization: Token <key> berhasil (201)
+        self.client.credentials(HTTP_AUTHORIZATION=f"Token {token}")
+        create_res = self.client.post(
+            self.project_list_url,
+            {
+                "name": "Flutter Mobile Client",
+                "description": "Integrated with DRF token auth",
+                "date": 2026,
+            },
+            format="json",
+        )
+        self.assertEqual(create_res.status_code, status.HTTP_201_CREATED)
+
+        # Logout mencabut token (204)
+        logout_res = self.client.post(self.logout_url)
+        self.assertEqual(logout_res.status_code, status.HTTP_204_NO_CONTENT)
+
+        # Token yang sudah dicabut ditolak (401)
+        retry_res = self.client.post(
+            self.project_list_url,
+            {
+                "name": "Should Fail",
+                "description": "Revoked token",
+                "date": 2026,
+            },
+            format="json",
+        )
+        self.assertEqual(retry_res.status_code, status.HTTP_401_UNAUTHORIZED)
